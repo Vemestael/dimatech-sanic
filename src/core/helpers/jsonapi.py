@@ -1,5 +1,5 @@
 def format_error(status=None, title=None, detail=None, code=None):
-    '''Formatting JSON API Error Object
+    """Formatting JSON API Error Object
 
     Constructing an error object based on JSON API standard
     ref: http://jsonapi.org/format/#error-objects
@@ -12,23 +12,24 @@ def format_error(status=None, title=None, detail=None, code=None):
 
     Returns:
         A dictionary contains of status, title, detail and code
-    '''
+    """
     error = {}
-    error.update({ 'title': title })
+    error.update({'title': title})
 
     if status is not None:
-        error.update({ 'status': status })
+        error.update({'status': status})
 
     if detail is not None:
-        error.update({ 'detail': detail })
+        error.update({'detail': detail})
 
     if code is not None:
-        error.update({ 'code': code })
+        error.update({'code': code})
 
     return error
 
+
 def return_an_error(*args):
-    '''List of errors
+    """List of errors
 
     Put all errors into a list of errors
     ref: http://jsonapi.org/format/#errors
@@ -38,9 +39,9 @@ def return_an_error(*args):
 
     Returns:
         A dictionary contains a list of errors
-    '''
+    """
     list_errors = []
     list_errors.extend(list(args))
 
-    errors = { 'errors': list_errors }
+    errors = {'errors': list_errors}
     return errors
