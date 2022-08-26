@@ -22,7 +22,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('balance', sa.Numeric(), nullable=False),
-    sa.ForeignKeyConstraint(['user_id'], ['User.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('product',
@@ -39,7 +39,7 @@ def upgrade() -> None:
     sa.Column('bill_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['bill_id'], ['customer_bill.id'], ),
     sa.ForeignKeyConstraint(['product_id'], ['product.id'], ),
-    sa.ForeignKeyConstraint(['user_id'], ['User.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('transaction',
@@ -48,6 +48,6 @@ def upgrade() -> None:
     sa.Column('bill_id', sa.Integer(), nullable=False),
     sa.Column('amount', sa.Numeric(), nullable=False),
     sa.ForeignKeyConstraint(['bill_id'], ['customer_bill.id'], ),
-    sa.ForeignKeyConstraint(['user_id'], ['User.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id')
     )

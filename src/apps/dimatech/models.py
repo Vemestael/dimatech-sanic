@@ -28,13 +28,13 @@ class CustomerBillModel(BaseModel):
     """
     Consists of:
     user_id: ForeignKey to User
-    bill_balance: Numeric
+    balance: Numeric
     """
     __tablename__ = 'customer_bill'
     user_id = Column(Integer, ForeignKey(User.id), nullable=False)
     balance = Column(Numeric, default=0.0, nullable=False)
 
-    user = relationship('User', backref='customer_bill')
+    user = relationship(User, backref='customer_bill')
 
 
 class TransactionModel(BaseModel):
@@ -50,8 +50,8 @@ class TransactionModel(BaseModel):
     bill_id = Column(Integer, ForeignKey('customer_bill.id'), nullable=False)
     amount = Column(Numeric, default=0.0, nullable=False)
 
-    user = relationship('User', backref='transaction')
-    bill = relationship('customer_bill', backref='transaction')
+    user = relationship(User, backref='transaction')
+    bill = relationship(CustomerBillModel, backref='transaction')
 
 
 class PurchaseModel(BaseModel):
@@ -67,6 +67,6 @@ class PurchaseModel(BaseModel):
     user_id = Column(Integer, ForeignKey(User.id), nullable=False)
     bill_id = Column(Integer, ForeignKey('customer_bill.id'), nullable=False)
 
-    product = relationship('product', backref='purchase')
-    user = relationship('User', backref='purchase')
-    bill = relationship('customer_bill', backref='purchase')
+    product = relationship(ProductModel, backref='purchase')
+    user = relationship(User, backref='purchase')
+    bill = relationship(CustomerBillModel, backref='purchase')

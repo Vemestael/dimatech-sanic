@@ -17,7 +17,7 @@ class User(Base):
     is_active: Boolean
     is_admin: Boolean
     """
-    __tablename__ = 'User'
+    __tablename__ = 'user'
 
     id = Column(Integer, primary_key=True)
     username = Column(String(150), unique=True, nullable=False)
