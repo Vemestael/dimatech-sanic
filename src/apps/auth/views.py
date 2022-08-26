@@ -7,32 +7,22 @@ from sanic.response import json, empty
 from sanic.views import HTTPMethodView
 from sanic_ext import validate
 from sanic_jwt_extended import JWT
-from sanic_jwt_extended.decorators import refresh_jwt_required
+from sanic_jwt_extended.decorators import refresh_jwt_required, jwt_required
 from sanic_jwt_extended.tokens import Token
 from sqlalchemy import select, update, delete
 
-from apps.auth.models import User, UserValidator, UserDetailValidator, AuthorizationValidator
+from apps.auth.models import User, UserValidator, UserDetailValidator
 
 
 async def get_password_hash(password: str) -> tuple:
     salt = urandom(32)
 
-    password_hash = pbkdf2_hmac(
-        hash_name='sha256',
-        password=password.encode('utf-8'),
-        salt=salt,
-        iterations=100000  # It is recommended to use at least 100,000 iterations of SHA-256
-    )
+    password_hash = pbkdf2_hmac(hash_name='sha256', password=password.encode('utf-8'), salt=salt, iterations=100000)
     return salt, password_hash
 
 
 async def check_password(salt, current_password_hash, new_password: str) -> bool:
-    password_hash = pbkdf2_hmac(
-        'sha256',
-        new_password.encode('utf-8'),
-        salt,
-        100000  # It is recommended to use at least 100,000 iterations of SHA-256
-    )
+    password_hash = pbkdf2_hmac(hash_name='sha256', password=new_password.encode('utf-8'), salt=salt, iterations=100000)
     return current_password_hash == password_hash
 
 
@@ -62,7 +52,7 @@ class UserAPI(HTTPMethodView):
 
 
 class UserDetailAPI(HTTPMethodView):
-
+    @jwt_required(allow=['User', 'Admin'])
     async def get(self, request: Request, pk: int, *args, **kwargs) -> response:
         session = request.ctx.session
         async with session.begin():
@@ -71,6 +61,7 @@ class UserDetailAPI(HTTPMethodView):
         user = {'username': user.username, 'email': user.email, 'is_active': user.is_active, 'is_admin': user.is_admin}
         return json(user)
 
+    @jwt_required(allow=['Admin'])
     @validate(json=UserValidator)
     async def put(self, request: Request, pk: int, *args, **kwargs) -> response:
         session = request.ctx.session
@@ -89,6 +80,7 @@ class UserDetailAPI(HTTPMethodView):
                 session.add(user)
                 return json(request.json, status=201)
 
+    @jwt_required(allow=['Admin'])
     @validate(json=UserDetailValidator)
     async def patch(self, request: Request, pk: int, *args, **kwargs) -> response:
         session = request.ctx.session
@@ -102,6 +94,7 @@ class UserDetailAPI(HTTPMethodView):
             await session.execute(update(User).values(**user_data).where(User.id == pk))
         return json(request.json, status=200)
 
+    @jwt_required(allow=['Admin'])
     async def delete(self, request: Request, pk: int, *args, **kwargs) -> response:
         session = request.ctx.session
         async with session.begin():
@@ -129,9 +122,18 @@ async def login(request: Request, *args, **kwargs) -> response:
     async with session.begin():
         user = await session.execute(select(User).where(User.username == username))
     user = user.scalars().first()
+
+    if not user.is_active:
+        return json({'status': 400, 'message': 'User disabled'}, status=400)
+
     if await check_password(user.salt, user.password_hash, password):
-        access_token = JWT.create_access_token(identity=username)
-        refresh_token = JWT.create_refresh_token(identity=username)
+        if user.is_admin:
+            role = 'Admin'
+        else:
+            role = 'User'
+
+        access_token = JWT.create_access_token(identity=username, role=role)
+        refresh_token = JWT.create_refresh_token(identity=username, role=role)
         return json({'access_token': access_token, 'refresh_token': refresh_token}, status=201)
     else:
         return json({'status': 400, 'message': 'Wrong user data'}, status=400)
@@ -139,4 +141,9 @@ async def login(request: Request, *args, **kwargs) -> response:
 
 @refresh_jwt_required
 async def get_refresh_token(request: Request, token: Token) -> response:
-    return json({"refresh_token": JWT.create_access_token(identity=token.identity)})
+    return json({"access_token": JWT.create_access_token(identity=token.identity)})
+
+
+@jwt_required
+async def revoke_token(request, *args, **kwargs):
+    await Token(request.json.get('token')).revoke()

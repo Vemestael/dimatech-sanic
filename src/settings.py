@@ -1,4 +1,5 @@
 from contextvars import ContextVar
+from datetime import timedelta
 from os import environ
 from os.path import join, dirname
 
@@ -48,3 +49,8 @@ class Settings(object):
     def setup_jwt(self, app):
         with JWT.initialize(app) as manager:
             manager.config.secret_key = self.SECRET_KEY
+            manager.config.access_token_expires = timedelta(days=1)
+            manager.config.refresh_token_expires = timedelta(days=30)
+            manager.config.use_acl = True
+            manager.config.acl_claim = "role"
+            manager.config.use_blacklist = True
