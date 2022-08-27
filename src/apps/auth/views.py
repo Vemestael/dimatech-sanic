@@ -27,7 +27,16 @@ async def check_password(salt, current_password_hash, new_password: str) -> bool
 
 
 class UserAPI(HTTPMethodView):
+    @jwt_required(allow=['Admin'])
     async def get(self, request: Request, *args, **kwargs) -> response:
+        """
+        Args:
+            request: None
+            *args: None
+            **kwargs: token
+
+        Returns: List of users
+        """
         session = request.ctx.session
         async with session.begin():
             users = await session.execute(select(User).order_by(User.id))
@@ -37,12 +46,27 @@ class UserAPI(HTTPMethodView):
 
     @validate(json=UserValidator)
     async def post(self, request: Request, *args, **kwargs) -> response:
+        """
+        Creates a new user in the inactive state and generates an activation link
+        Args:
+            request: {
+                username: str = Field(max_length=150)
+                password: str = Field(min_length=8)
+                email: Optional[EmailStr]
+                is_active: Optional[bool]
+                is_admin: Optional[bool]
+                }
+            *args:
+            **kwargs:
+
+        Returns: activation_url
+        """
         host = request.headers.get('host')
 
         session = request.ctx.session
         async with session.begin():
             _salt, _password = await get_password_hash(request.json.get('password'))
-            user = User(username=request.json.get('username'), password_hash=_password, salt=_salt,
+            user = User(username=request.json.get('username').lower(), password_hash=_password, salt=_salt,
                         email=request.json.get('email', ''))
             session.add(user)
 
@@ -52,8 +76,14 @@ class UserAPI(HTTPMethodView):
 
 
 class UserDetailAPI(HTTPMethodView):
+    """
+    The class provides basic endpoints for getting detailed information about the User and editing it
+    """
     @jwt_required(allow=['User', 'Admin'])
     async def get(self, request: Request, pk: int, *args, **kwargs) -> response:
+        """
+        Implements the GET method for the REST API
+        """
         session = request.ctx.session
         async with session.begin():
             user = await session.execute(select(User).where(User.id == pk))
@@ -64,6 +94,9 @@ class UserDetailAPI(HTTPMethodView):
     @jwt_required(allow=['Admin'])
     @validate(json=UserValidator)
     async def put(self, request: Request, pk: int, *args, **kwargs) -> response:
+        """
+        Implements the PUT method for the REST API
+        """
         session = request.ctx.session
         user_data = request.json.copy()
 
@@ -83,6 +116,9 @@ class UserDetailAPI(HTTPMethodView):
     @jwt_required(allow=['Admin'])
     @validate(json=UserDetailValidator)
     async def patch(self, request: Request, pk: int, *args, **kwargs) -> response:
+        """
+        Implements the PATCH method for the REST API
+        """
         session = request.ctx.session
         user_data = request.json.copy()
 
@@ -96,6 +132,9 @@ class UserDetailAPI(HTTPMethodView):
 
     @jwt_required(allow=['Admin'])
     async def delete(self, request: Request, pk: int, *args, **kwargs) -> response:
+        """
+        Implements the DELETE method for the REST API
+        """
         session = request.ctx.session
         async with session.begin():
             await session.execute(delete(User).where(User.id == pk))
@@ -103,6 +142,16 @@ class UserDetailAPI(HTTPMethodView):
 
 
 async def activate_account(request: Request, token: str, *args, **kwargs) -> response:
+    """
+    Activates the account by the ID obtained from the decrypted token
+    Args:
+        request: None
+        token: derived from the url
+        *args: None
+        **kwargs: None
+
+    Returns: HTTP 204 No Content
+    """
     pk = jwt.decode(token, Sanic.get_app().config.SECRET_KEY)['user_id']
     # here you can make a lot of protections, such as adding token lifetime
     # or putting tokens in a separate table, and after activation delete them
@@ -114,6 +163,18 @@ async def activate_account(request: Request, token: str, *args, **kwargs) -> res
 
 @validate(json=UserValidator)
 async def login(request: Request, *args, **kwargs) -> response:
+    """
+    Authorizes the user in the system via JWT
+    Args:
+        request: {
+            username: str = Field(max_length=150)
+            password: str = Field(min_length=8)
+            }
+        *args:
+        **kwargs:
+
+    Returns: Error or JWT access and refresh tokens
+    """
     username = request.json.get('username')
     password = request.json.get('password')
 
@@ -141,9 +202,29 @@ async def login(request: Request, *args, **kwargs) -> response:
 
 @refresh_jwt_required
 async def get_refresh_token(request: Request, token: Token) -> response:
+    """
+    Generates a new JWT access token
+    Args:
+        request: None
+        token: Taken from the "X-Refresh-Token" header to look for the refresh JWT
+
+    Returns: access_token
+    """
     return json({"access_token": JWT.create_access_token(identity=token.identity)})
 
 
 @jwt_required
 async def revoke_token(request, *args, **kwargs):
+    """
+    Revoke specific token
+    Args:
+        request: {
+            token: str
+            }
+        *args:
+        **kwargs:
+
+    Returns: HTTP 204 No Content
+    """
     await Token(request.json.get('token')).revoke()
+    return empty()

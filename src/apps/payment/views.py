@@ -11,6 +11,23 @@ from apps.dimatech.views import TransactionAPI
 
 @validate(json=TransactionValidator)
 async def transaction_webhook(request, *args, **kwargs):
+    """
+    Webhook processes transactions from an external service.
+    Checks the integrity of the data by signature, creates a new customer bill if it does not exist.
+
+    Args:
+        request: {
+            signature: str
+            transaction_id: int
+            user_id: int
+            bill_id: int
+            amount: float = Field(ge=0.0)
+        }
+        *args: None
+        **kwargs: None
+
+    Returns: the transaction status.
+    """
     sign_data = f"{Sanic.get_app().config.SIGNING_KEY}:{request.json.get('transaction_id')}:" \
                 f"{request.json.get('user_id')}:{request.json.get('bill_id')}:{request.json.get('amount')}"
     signature = SHA1.new()
