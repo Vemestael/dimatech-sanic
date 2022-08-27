@@ -15,6 +15,7 @@ class CustomerBillValidator(BaseModel):
 
 
 class TransactionValidator(BaseModel):
+    signature: Optional[str]
     transaction_id: Optional[int]
     user_id: int
     bill_id: int

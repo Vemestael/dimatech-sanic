@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from sanic import Request, response
 from sanic.response import json, empty
 from sanic.views import HTTPMethodView
@@ -8,8 +10,6 @@ from sqlalchemy import select, update, delete
 from apps.auth.models import User
 from apps.dimatech.models import BaseModel, ProductModel, CustomerBillModel, TransactionModel, PurchaseModel
 from apps.dimatech.validators import ProductValidator, CustomerBillValidator, TransactionValidator, PurchaseValidator
-
-from decimal import Decimal
 
 
 class BaseAPI(HTTPMethodView):
@@ -28,8 +28,8 @@ class BaseAPI(HTTPMethodView):
     async def post(self, request: Request, *args, **kwargs) -> response:
         session = request.ctx.session
         async with session.begin():
-            product = self.model(**request.json)
-            session.add(product)
+            obj = self.model(**request.json)
+            session.add(obj)
         return json(request.json, status=201)
 
 
@@ -200,9 +200,9 @@ class TransactionAPI(BaseAPI):
             bill = await session.execute(
                 select(CustomerBillModel).where(CustomerBillModel.id == request.json.get('bill_id')))
             bill = bill.scalars().first()
-            await session.execute(
-                update(CustomerBillModel).values({'balance': bill.balance + Decimal(request.json.get('amount'))}).where(
-                    CustomerBillModel.id == request.json.get('bill_id')))
+            await session.execute(update(CustomerBillModel).values(
+                {'balance': Decimal(bill.balance) + Decimal(request.json.get('amount'))}).where(
+                CustomerBillModel.id == request.json.get('bill_id')))
         return await super(TransactionAPI, self).post(request, *args, **kwargs)
 
 
@@ -249,15 +249,14 @@ class PurchaseAPI(BaseAPI):
 
     @jwt_required
     async def get(self, request: Request, *args, **kwargs) -> response:
-        self.query = select(PurchaseModel, ProductModel.title, User.username).\
-            join(ProductModel, ProductModel.id == PurchaseModel.product_id).\
-            join(User, User.id == PurchaseModel.user_id)
+        self.query = select(PurchaseModel, ProductModel.title, User.username).join(ProductModel,
+                                                                                   ProductModel.id == PurchaseModel.product_id).join(
+            User, User.id == PurchaseModel.user_id)
         purchases = await super(PurchaseAPI, self).get(request, *args, **kwargs)
         purchases = purchases.all()
         purchases = {'purchases': [
-            {'id': purchase.id, 'product_id': purchase.product_id, 'title': title,
-             'user_id': purchase.user_id, "username": username,  'bill_id': purchase.bill_id}
-            for purchase, title, username in purchases]}
+            {'id': purchase.id, 'product_id': purchase.product_id, 'title': title, 'user_id': purchase.user_id,
+             "username": username, 'bill_id': purchase.bill_id} for purchase, title, username in purchases]}
         return json(purchases)
 
     @jwt_required
@@ -289,15 +288,16 @@ class PurchaseDetailAPI(BaseDetailAPI):
         async with session.begin():
             if kwargs['token'].role == 'Admin':
                 purchase = await session.execute(
-                    select(PurchaseModel, ProductModel.title, User.username).
-                    join(ProductModel, User, ProductModel.id == PurchaseModel.product_id,
-                         User.id == PurchaseModel.user_id).where(PurchaseModel.id == pk))
+                    select(PurchaseModel, ProductModel.title, User.username).join(ProductModel, User,
+                                                                                  ProductModel.id == PurchaseModel.product_id,
+                                                                                  User.id == PurchaseModel.user_id).where(
+                        PurchaseModel.id == pk))
             else:
                 purchase = await session.execute(
-                    select(PurchaseModel, ProductModel.title, User.username).
-                    join(ProductModel, User, ProductModel.id == PurchaseModel.product_id,
-                         User.id == PurchaseModel.user_id).
-                    where(PurchaseModel.id == pk, User.username == kwargs['token'].identity))
+                    select(PurchaseModel, ProductModel.title, User.username).join(ProductModel, User,
+                                                                                  ProductModel.id == PurchaseModel.product_id,
+                                                                                  User.id == PurchaseModel.user_id).where(
+                        PurchaseModel.id == pk, User.username == kwargs['token'].identity))
         if not purchase:
             return json({'status': 404, 'msg': 'Record does not exist'}, status=404)
         purchase, username = purchase.first()

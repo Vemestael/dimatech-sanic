@@ -4,6 +4,7 @@ from sanic import Sanic
 
 from apps.auth import blueprint as auth_app
 from apps.dimatech import blueprint as dimatech_app
+from apps.payment import blueprint as payment_app
 from core.extentions.exceptions import blueprint as ext_exceptions
 from core.extentions.middlewares import blueprint as ext_middlewares
 from settings import Settings
@@ -30,6 +31,7 @@ app.blueprint(ext_middlewares)
 # Install apps
 app.blueprint(auth_app)
 app.blueprint(dimatech_app)
+app.blueprint(payment_app)
 
 # Running sanic, we need to make sure directly run by interpreter
 # ref: http://sanic.readthedocs.io/en/latest/sanic/deploying.html#running-via-command
