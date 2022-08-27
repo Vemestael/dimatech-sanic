@@ -126,10 +126,10 @@ class CustomerBillAPI(BaseAPI):
     def __init__(self):
         super().__init__()
         self.model = CustomerBillModel
-        self.query = select(CustomerBillModel, User.username).join(User, User.id == CustomerBillModel.user_id)
 
     @jwt_required
     async def get(self, request: Request, *args, **kwargs) -> response:
+        self.query = select(CustomerBillModel, User.username).join(User, User.id == CustomerBillModel.user_id)
         bills = await super(CustomerBillAPI, self).get(request, *args, **kwargs)
         bills = bills.all()
         bills = {'bills': [{'id': bill.id, 'user_id': bill.user_id, "username": username, 'balance': bill.balance} for
@@ -181,10 +181,10 @@ class TransactionAPI(BaseAPI):
     def __init__(self):
         super().__init__()
         self.model = TransactionModel
-        self.query = select(TransactionModel, User.username).join(User, User.id == TransactionModel.user_id)
 
     @jwt_required
     async def get(self, request: Request, *args, **kwargs) -> response:
+        self.query = select(TransactionModel, User.username).join(User, User.id == TransactionModel.user_id)
         transactions = await super(TransactionAPI, self).get(request, *args, **kwargs)
         transactions = transactions.all()
         transactions = {'transactions': [
@@ -246,16 +246,18 @@ class PurchaseAPI(BaseAPI):
     def __init__(self):
         super().__init__()
         self.model = PurchaseModel
-        self.query = select(PurchaseModel, ProductModel.title, User.username).\
-            join(ProductModel, User, ProductModel.id == PurchaseModel.product_id, User.id == PurchaseModel.user_id)
 
     @jwt_required
     async def get(self, request: Request, *args, **kwargs) -> response:
+        self.query = select(PurchaseModel, ProductModel.title, User.username).\
+            join(ProductModel, ProductModel.id == PurchaseModel.product_id).\
+            join(User, User.id == PurchaseModel.user_id)
         purchases = await super(PurchaseAPI, self).get(request, *args, **kwargs)
         purchases = purchases.all()
         purchases = {'purchases': [
-            {'id': purchase.id, 'user_id': purchase.user_id, "username": username, 'product_id': purchase.product_id,
-             'title': purchase.title, 'bill_id': purchase.bill_id} for purchase, username in purchases]}
+            {'id': purchase.id, 'product_id': purchase.product_id, 'title': title,
+             'user_id': purchase.user_id, "username": username,  'bill_id': purchase.bill_id}
+            for purchase, title, username in purchases]}
         return json(purchases)
 
     @jwt_required
