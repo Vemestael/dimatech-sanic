@@ -1,15 +1,14 @@
 from decimal import Decimal
 
+from apps.auth.models import User
+from apps.dimatech.models import BaseModel, ProductModel, CustomerBillModel, TransactionModel, PurchaseModel
+from apps.dimatech.validators import ProductValidator, CustomerBillValidator, TransactionValidator, PurchaseValidator
 from sanic import Request, response
 from sanic.response import json, empty
 from sanic.views import HTTPMethodView
 from sanic_ext import validate
 from sanic_jwt_extended import jwt_required
 from sqlalchemy import select, update, delete
-
-from apps.auth.models import User
-from apps.dimatech.models import BaseModel, ProductModel, CustomerBillModel, TransactionModel, PurchaseModel
-from apps.dimatech.validators import ProductValidator, CustomerBillValidator, TransactionValidator, PurchaseValidator
 
 
 class BaseAPI(HTTPMethodView):
@@ -584,10 +583,10 @@ class PurchaseDetailAPI(BaseDetailAPI):
         async with session.begin():
             if kwargs['token'].role == 'Admin':
                 purchase = await session.execute(
-                    select(PurchaseModel, ProductModel.title, User.username).
-                    join(ProductModel, User, ProductModel.id == PurchaseModel.product_id,
-                         User.id == PurchaseModel.user_id).where(
-                        PurchaseModel.id == pk))
+                    select(PurchaseModel, ProductModel.title, User.username). \
+                        join(ProductModel, ProductModel.id == PurchaseModel.product_id). \
+                        join(User, User.id == PurchaseModel.user_id). \
+                        where(PurchaseModel.id == pk))
             else:
                 purchase = await session.execute(
                     select(PurchaseModel, ProductModel.title, User.username). \
