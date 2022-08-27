@@ -53,4 +53,3 @@ class Settings(object):
             manager.config.refresh_token_expires = timedelta(days=30)
             manager.config.use_acl = True
             manager.config.acl_claim = "role"
-            manager.config.use_blacklist = True
