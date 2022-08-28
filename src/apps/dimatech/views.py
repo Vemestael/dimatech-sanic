@@ -598,10 +598,10 @@ class PurchaseDetailAPI(BaseDetailAPI):
                         where(PurchaseModel.id == pk, User.username == kwargs['token'].identity))
         if not purchase:
             return json({'status': 404, 'msg': 'Record does not exist'}, status=404)
-        purchase, username = purchase.first()
+        purchase, title, username = purchase.first()
         if (kwargs['token'].role == 'Admin') or (username == kwargs['token'].identity):
             purchase = {'id': purchase.id, 'user_id': purchase.user_id, "username": username,
-                        'product_id': purchase.product_id, 'title': purchase.title, 'bill_id': purchase.bill_id}
+                        'product_id': purchase.product_id, 'title': title, 'bill_id': purchase.bill_id}
             return json(purchase)
         else:
             return empty(status=403)
