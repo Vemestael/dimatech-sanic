@@ -31,7 +31,7 @@ class CustomerBillModel(BaseModel):
     balance: Numeric
     """
     __tablename__ = 'customer_bill'
-    user_id = Column(Integer, ForeignKey(User.id), nullable=False)
+    user_id = Column(Integer, ForeignKey(User.id, ondelete='CASCADE'), nullable=False)
     balance = Column(Numeric, default=0.0, nullable=False)
 
     user = relationship(User, backref='customer_bill')
@@ -46,8 +46,8 @@ class TransactionModel(BaseModel):
     """
     __tablename__ = 'transaction'
 
-    user_id = Column(Integer, ForeignKey(User.id), nullable=False)
-    bill_id = Column(Integer, ForeignKey('customer_bill.id'), nullable=False)
+    user_id = Column(Integer, ForeignKey(User.id, ondelete='CASCADE'), nullable=False)
+    bill_id = Column(Integer, ForeignKey('customer_bill.id', ondelete='CASCADE'), nullable=False)
     amount = Column(Numeric, default=0.0, nullable=False)
 
     user = relationship(User, backref='transaction')
@@ -63,9 +63,9 @@ class PurchaseModel(BaseModel):
     """
     __tablename__ = 'purchase'
 
-    product_id = Column(Integer, ForeignKey('product.id'), nullable=False)
-    user_id = Column(Integer, ForeignKey(User.id), nullable=False)
-    bill_id = Column(Integer, ForeignKey('customer_bill.id'), nullable=False)
+    product_id = Column(Integer, ForeignKey('product.id', ondelete='CASCADE'), nullable=False)
+    user_id = Column(Integer, ForeignKey(User.id, ondelete='CASCADE'), nullable=False)
+    bill_id = Column(Integer, ForeignKey('customer_bill.id', ondelete='CASCADE'), nullable=False)
 
     product = relationship(ProductModel, backref='purchase')
     user = relationship(User, backref='purchase')
