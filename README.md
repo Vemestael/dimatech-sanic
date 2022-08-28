@@ -25,7 +25,7 @@ This project provides you a working sanic environment without requiring you to i
     $ docker-compose -f docker-compose.yml up -d --build
     ```
 
-6. You've done! Main page is available on http://localhost, pgAdmin on http://localhost:2345
+6. You've done! Main page is available on http://localhost, pgAdmin on http://localhost:2345 (login: admin@admin.com, password: postgres)
 
 7. After finishing work, you can stop running containers:
     ```sh
@@ -135,16 +135,11 @@ POST */v1/payment/webhook* - for sending webhook of transactions
    amount: float
    ```
 
-*host:2345/* - pgAdmin for interaction with the database tables
+*host:2345/* - pgAdmin for interaction with the database tables (login: admin@admin.com, password: postgres)
 
 **Note**: default users can view accounts, transactions and purchases associated with them. Administrators can view the data of all users
 
-To create an administrator account run the command
-   ```sh
-    $ docker-compose run sanic python manage.py createsuperuser
-   ```
-
-You can then grant administrator rights through the admin panel
+The initial administrator is assigned in the database, subsequent ones in the database or by changing the is_admin field of a certain user
 
 ## License
 
