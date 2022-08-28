@@ -31,7 +31,7 @@ class Settings(object):
         self.setup_jwt(app)
 
     def setup_database(self, app):
-        bind = create_async_engine(self.DB_URL, echo=self.DEBUG)
+        bind = create_async_engine(self.DB_URL, echo=bool(self.DEBUG))
 
         _base_model_session_ctx = ContextVar("session")
 

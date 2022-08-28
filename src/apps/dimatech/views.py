@@ -195,7 +195,7 @@ class ProductDetailAPI(BaseDetailAPI):
 
         Returns: HTTP 200 OK | HTTP 201 Created
         """
-        return await super(ProductDetailAPI, self).put(request, *args, **kwargs)
+        return await super(ProductDetailAPI, self).put(request, pk, *args, **kwargs)
 
     @jwt_required(allow=['Admin'])
     async def patch(self, request: Request, pk: int, *args, **kwargs) -> response:
@@ -213,7 +213,7 @@ class ProductDetailAPI(BaseDetailAPI):
 
         Returns: HTTP 200 OK
         """
-        return await super(ProductDetailAPI, self).patch(request, *args, **kwargs)
+        return await super(ProductDetailAPI, self).patch(request, pk, *args, **kwargs)
 
     @jwt_required(allow=['Admin'])
     async def delete(self, request: Request, pk: int, *args, **kwargs) -> response:
@@ -221,7 +221,7 @@ class ProductDetailAPI(BaseDetailAPI):
         Implements DELETE method of REST API
         Requires JWT access token and administrator rights
         """
-        return await super(ProductDetailAPI, self).delete(request, *args, **kwargs)
+        return await super(ProductDetailAPI, self).delete(request, pk, *args, **kwargs)
 
 
 class CustomerBillAPI(BaseAPI):
@@ -321,7 +321,7 @@ class CustomerBillDetailAPI(BaseDetailAPI):
 
         Returns: HTTP 200 OK | HTTP 201 Created
         """
-        return await super(CustomerBillDetailAPI, self).put(request, *args, **kwargs)
+        return await super(CustomerBillDetailAPI, self).put(request, pk, *args, **kwargs)
 
     @jwt_required(allow=['Admin'])
     async def patch(self, request: Request, pk: int, *args, **kwargs) -> response:
@@ -338,7 +338,7 @@ class CustomerBillDetailAPI(BaseDetailAPI):
 
         Returns: HTTP 200 OK
         """
-        return await super(CustomerBillDetailAPI, self).patch(request, *args, **kwargs)
+        return await super(CustomerBillDetailAPI, self).patch(request, pk, pk, *args, **kwargs)
 
     @jwt_required(allow=['Admin'])
     async def delete(self, request: Request, pk: int, *args, **kwargs) -> response:
@@ -346,7 +346,7 @@ class CustomerBillDetailAPI(BaseDetailAPI):
         Implements DELETE method of REST API
         Requires JWT access token and administrator rights
         """
-        return await super(CustomerBillDetailAPI, self).delete(request, *args, **kwargs)
+        return await super(CustomerBillDetailAPI, self).delete(request, pk, *args, **kwargs)
 
 
 class TransactionAPI(BaseAPI):
@@ -461,7 +461,7 @@ class TransactionDetailAPI(BaseDetailAPI):
 
         Returns: HTTP 200 OK | HTTP 201 Created
         """
-        return await super(TransactionDetailAPI, self).put(request, *args, **kwargs)
+        return await super(TransactionDetailAPI, self).put(request, pk, *args, **kwargs)
 
     @jwt_required(allow=['Admin'])
     async def patch(self, request: Request, pk: int, *args, **kwargs) -> response:
@@ -479,7 +479,7 @@ class TransactionDetailAPI(BaseDetailAPI):
 
         Returns: HTTP 200 OK
         """
-        return await super(TransactionDetailAPI, self).patch(request, *args, **kwargs)
+        return await super(TransactionDetailAPI, self).patch(request, pk, *args, **kwargs)
 
     @jwt_required(allow=['Admin'])
     async def delete(self, request: Request, pk: int, *args, **kwargs) -> response:
@@ -487,7 +487,7 @@ class TransactionDetailAPI(BaseDetailAPI):
         Implements DELETE method of REST API
         Requires JWT access token and administrator rights
         """
-        return await super(TransactionDetailAPI, self).delete(request, *args, **kwargs)
+        return await super(TransactionDetailAPI, self).delete(request, pk, *args, **kwargs)
 
 
 class PurchaseAPI(BaseAPI):
@@ -551,6 +551,9 @@ class PurchaseAPI(BaseAPI):
             product = await session.execute(
                 select(ProductModel).where(ProductModel.id == request.json.get('product_id')))
             product = product.scalars().first()
+
+            if bill.balance < product.price:
+                return json({'status': 400, 'msg': 'Not enough money to purchase'}, status=400)
 
             await session.execute(update(CustomerBillModel).values({'balance': bill.balance - product.price}).where(
                 CustomerBillModel.id == request.json.get('bill_id')))
@@ -619,7 +622,7 @@ class PurchaseDetailAPI(BaseDetailAPI):
 
         Returns: HTTP 200 OK | HTTP 201 Created
         """
-        return await super(PurchaseDetailAPI, self).put(request, *args, **kwargs)
+        return await super(PurchaseDetailAPI, self).put(request, pk, *args, **kwargs)
 
     @jwt_required(allow=['Admin'])
     async def patch(self, request: Request, pk: int, *args, **kwargs) -> response:
@@ -636,7 +639,7 @@ class PurchaseDetailAPI(BaseDetailAPI):
 
         Returns: HTTP 200 OK
         """
-        return await super(PurchaseDetailAPI, self).patch(request, *args, **kwargs)
+        return await super(PurchaseDetailAPI, self).patch(request, pk, *args, **kwargs)
 
     @jwt_required(allow=['Admin'])
     async def delete(self, request: Request, pk: int, *args, **kwargs) -> response:
@@ -644,4 +647,4 @@ class PurchaseDetailAPI(BaseDetailAPI):
         Implements DELETE method of REST API
         Requires JWT access token and administrator rights
         """
-        return await super(PurchaseDetailAPI, self).delete(request, *args, **kwargs)
+        return await super(PurchaseDetailAPI, self).delete(request, pk, *args, **kwargs)
