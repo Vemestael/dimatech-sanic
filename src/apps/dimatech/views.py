@@ -268,6 +268,13 @@ class CustomerBillAPI(BaseAPI):
 
         Returns: HTTP 201 Created and request body
         """
+        if (not kwargs['token'].role == 'Admin') or (not request.json.get('user_id')):
+            session = request.ctx.session
+            async with session.begin():
+                user = await session.execute(select(User).where(User.username == kwargs['token'].identity))
+            user = user.scalars().first()
+            request.json.update({'user_id': user.id})
+            request.json.update({'balance': 0.0})
         return await super(CustomerBillAPI, self).post(request, *args, **kwargs)
 
 
@@ -543,7 +550,13 @@ class PurchaseAPI(BaseAPI):
         Returns: HTTP 201 Created and request body
         """
         session = request.ctx.session
+
         async with session.begin():
+            if (not kwargs['token'].role == 'Admin') or (not request.json.get('user_id')):
+                user = await session.execute(select(User).where(User.username == kwargs['token'].identity))
+                user = user.scalars().first()
+                request.json.update({'user_id': user.id})
+
             bill = await session.execute(
                 select(CustomerBillModel).where(CustomerBillModel.id == request.json.get('bill_id')))
             bill = bill.scalars().first()

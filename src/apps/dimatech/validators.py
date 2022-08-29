@@ -10,8 +10,8 @@ class ProductValidator(BaseModel):
 
 
 class CustomerBillValidator(BaseModel):
-    user_id: int
-    balance: float = Field(ge=0.0)
+    user_id: Optional[int]
+    balance: Optional[float] = Field(ge=0.0)
 
 
 class TransactionValidator(BaseModel):
@@ -24,5 +24,5 @@ class TransactionValidator(BaseModel):
 
 class PurchaseValidator(BaseModel):
     product_id: int
-    user_id: int
+    user_id: Optional[int]
     bill_id: int
